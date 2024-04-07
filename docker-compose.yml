@@ -4,16 +4,16 @@ services:
     build:
       context: .
       target: gateway
-    image: nicedoc.cn/biyue-gateway:${PRODUCT_VERSION}
+    image: registry.nicedoc.cn/biyue-gateway:${PRODUCT_VERSION}
 
   auth:
     build:
       context: .
       target: auth
-    image: nicedoc.cn/biyue-auth:${PRODUCT_VERSION}
+    image: registry.nicedoc.cn/biyue-auth:${PRODUCT_VERSION}
 
   callback:
     build:
       context: .
       target: callback
-    image: nicedoc.cn/biyue-callback:${PRODUCT_VERSION}
+    image: registry.nicedoc.cn/biyue-callback:${PRODUCT_VERSION}
