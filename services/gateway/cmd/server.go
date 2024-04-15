@@ -16,61 +16,62 @@
  *
  */
 
- package cmd
+package cmd
 
- import (
-	 "fmt"
- 
-	 "github.com/nicedoc/onlyoffice-biyue/services/gateway/web"
-	 "github.com/nicedoc/onlyoffice-biyue/services/gateway/web/controller"
-	 "github.com/nicedoc/onlyoffice-biyue/services/gateway/web/controller/convert"
-	 "github.com/nicedoc/onlyoffice-biyue/services/gateway/web/middleware"
-	 "github.com/nicedoc/onlyoffice-biyue/services/shared"
-	 "github.com/nicedoc/onlyoffice-biyue/services/shared/client"
-	 pkg "github.com/ONLYOFFICE/onlyoffice-integration-adapters"
-	 "github.com/ONLYOFFICE/onlyoffice-integration-adapters/crypto"
-	 chttp "github.com/ONLYOFFICE/onlyoffice-integration-adapters/service/http"
-	 "github.com/urfave/cli/v2"
- )
- 
- func Server() *cli.Command {
-	 return &cli.Command{
-		 Name:     "server",
-		 Usage:    "starts a new http server instance",
-		 Category: "server",
-		 Flags: []cli.Flag{
-			 &cli.StringFlag{
-				 Name:    "config_path",
-				 Usage:   "sets custom configuration path",
-				 Aliases: []string{"config", "conf", "c"},
-			 },
-		 },
-		 Action: func(c *cli.Context) error {
-			 var (
-				 configPath = c.String("config_path")
-			 )
- 
-			 app := pkg.NewBootstrapper(
-				 configPath, pkg.WithModules(
-					 crypto.NewStateGenerator,
-					 shared.BuildNewIntegrationCredentialsConfig(configPath),
-					 shared.BuildNewOnlyofficeConfig(configPath),
-					 controller.NewAuthController,
-					 controller.NewEditorController,
-					 convert.NewConvertController,
-					 middleware.NewSessionMiddleware,
-					 chttp.NewService, web.NewServer,
-					 client.NewDropboxAuthClient,
-				 ),
-			 ).Bootstrap()
- 
-			 if err := app.Err(); err != nil {
-				 return fmt.Errorf("could not bootstrap a server: %w", err)
-			 }
- 
-			 app.Run()
- 
-			 return nil
-		 },
-	 }
- }
+import (
+	"fmt"
+
+	pkg "github.com/ONLYOFFICE/onlyoffice-integration-adapters"
+	"github.com/ONLYOFFICE/onlyoffice-integration-adapters/crypto"
+	chttp "github.com/ONLYOFFICE/onlyoffice-integration-adapters/service/http"
+	"github.com/nicedoc/onlyoffice-biyue/services/gateway/web"
+	"github.com/nicedoc/onlyoffice-biyue/services/gateway/web/controller"
+	"github.com/nicedoc/onlyoffice-biyue/services/gateway/web/controller/convert"
+	"github.com/nicedoc/onlyoffice-biyue/services/gateway/web/middleware"
+	"github.com/nicedoc/onlyoffice-biyue/services/shared"
+	"github.com/nicedoc/onlyoffice-biyue/services/shared/client"
+	"github.com/urfave/cli/v2"
+)
+
+func Server() *cli.Command {
+	return &cli.Command{
+		Name:     "server",
+		Usage:    "starts a new http server instance",
+		Category: "server",
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:    "config_path",
+				Usage:   "sets custom configuration path",
+				Aliases: []string{"config", "conf", "c"},
+			},
+		},
+		Action: func(c *cli.Context) error {
+			var (
+				configPath = c.String("config_path")
+			)
+
+			app := pkg.NewBootstrapper(
+				configPath, pkg.WithModules(
+					crypto.NewStateGenerator,
+					shared.BuildNewIntegrationCredentialsConfig(configPath),
+					shared.BuildNewOnlyofficeConfig(configPath),
+					shared.BuildNewS3Config(configPath),
+					controller.NewAuthController,
+					controller.NewEditorController,
+					convert.NewConvertController,
+					middleware.NewSessionMiddleware,
+					chttp.NewService, web.NewServer,
+					client.NewDropboxAuthClient,
+				),
+			).Bootstrap()
+
+			if err := app.Err(); err != nil {
+				return fmt.Errorf("could not bootstrap a server: %w", err)
+			}
+
+			app.Run()
+
+			return nil
+		},
+	}
+}

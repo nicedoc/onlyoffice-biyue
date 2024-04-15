@@ -241,7 +241,7 @@ func (c EditorController) BuildEditorPage() http.HandlerFunc {
 			EditorConfig: response.EditorConfig{
 				User: response.User{
 					ID:   usr.AccountID,
-					Name: usr.Name.DisplayName,
+					Name: usr.DisplayName,
 				},
 				CallbackURL: fmt.Sprintf(
 					"%s/callback?id=%s",

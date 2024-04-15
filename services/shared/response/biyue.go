@@ -16,33 +16,40 @@
  *
  */
 
- package response
+package response
 
- type BiyueUserResponse struct {
-	 AccountID string          `json:"account_id"`
-	 Email     string          `json:"email"`
-	 Name      BiyueUserName `json:"name"`
-	 Locale    string          `json:"locale"`
- }
- 
- type BiyueUserName struct {
-	 DisplayName  string `json:"display_name"`
-	 FamiliarName string `json:"familiar_name"`
-	 GivenName    string `json:"given_name"`
-	 Surname      string `json:"surname"`
- }
- 
- type BiyueFileResponse struct {
-	 ID          string `json:"id"`
-	 CModified   string `json:"client_modified"`
-	 SModified   string `json:"server_modified"`
-	 PathLower   string `json:"path_lower"`
-	 PathDisplay string `json:"path_display"`
-	 Rev         string `json:"rev"`
-	 Name        string `json:"name"`
-	 Size        int    `json:"size"`
- }
- 
- type BiyueDownloadResponse struct {
-	 Link string `json:"link"`
- }
+// "sub": "5f92cb9f-20df-4f5b-b52a-ffd080be579c",
+// "email_verified": false,
+// "name": "Mingyuan Hou",
+// "preferred_username": "biyue",
+// "given_name": "Mingyuan",
+// "family_name": "Hou",
+// "email": "houmingyuan@gmail.com"
+type BiyueUserResponse struct {
+	AccountID string `json:"sub"`
+	Email     string `json:"email"`
+	BiyueUserName
+	Locale string `json:"locale"`
+}
+
+type BiyueUserName struct {
+	DisplayName  string `json:"preferred_username"`
+	FamiliarName string `json:"family_name"`
+	GivenName    string `json:"given_name"`
+	Surname      string `json:"surname"`
+}
+
+type BiyueFileResponse struct {
+	ID          string `json:"id"`
+	CModified   string `json:"client_modified"`
+	SModified   string `json:"server_modified"`
+	PathLower   string `json:"path_lower"`
+	PathDisplay string `json:"path_display"`
+	Rev         string `json:"rev"`
+	Name        string `json:"name"`
+	Size        int    `json:"size"`
+}
+
+type BiyueDownloadResponse struct {
+	Link string `json:"link"`
+}

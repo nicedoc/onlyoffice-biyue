@@ -4,11 +4,11 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/nicedoc/onlyoffice-biyue/services/shared"
 	"github.com/ONLYOFFICE/onlyoffice-integration-adapters/crypto"
 	"github.com/ONLYOFFICE/onlyoffice-integration-adapters/log"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/gorilla/sessions"
+	"github.com/nicedoc/onlyoffice-biyue/services/shared"
 	"golang.org/x/oauth2"
 )
 
@@ -54,7 +54,7 @@ func (m SessionMiddleware) Protect(next http.Handler) http.Handler {
 
 		val, ok := session.Values["token"].(string)
 		if !ok {
-			m.logger.Debug("could not cast token to string")
+			m.logger.Debug("could not cast token to string, %v", session)
 			session.Options.MaxAge = -1
 			if err := session.Save(r, rw); err != nil {
 				m.logger.Warnf("could not save a cookie session: %w", err)
