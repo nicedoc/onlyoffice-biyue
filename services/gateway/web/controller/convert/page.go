@@ -68,27 +68,27 @@ func (c ConvertController) BuildConvertPage() http.HandlerFunc {
 		userChan := make(chan response.BiyueUserResponse, 1)
 		fileChan := make(chan response.BiyueFileResponse, 1)
 
-		go func() {
+		go func(ctx context.Context) {
 			defer wg.Done()
-			uresp, err := c.api.GetUser(r.Context(), ures.AccessToken)
+			uresp, err := c.api.GetUser(tctx, ures.AccessToken)
 			if err != nil {
 				errChan <- err
 				return
 			}
 
 			userChan <- uresp
-		}()
+		}(tctx)
 
-		go func() {
+		go func(ctx context.Context) {
 			defer wg.Done()
-			file, err := c.api.GetFile(r.Context(), fileID, ures.AccessToken)
+			file, err := c.api.GetFile(ctx, fileID, ures.AccessToken)
 			if err != nil {
 				errChan <- err
 				return
 			}
 
 			fileChan <- file
-		}()
+		}(tctx)
 
 		c.logger.Debug("waiting for goroutines to finish")
 		wg.Wait()

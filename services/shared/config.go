@@ -68,6 +68,7 @@ func BuildNewIntegrationCredentialsConfig(path string) func() (*oauth2.Config, e
 			RedirectURL:  config.Credentials.RedirectURL,
 			Scopes:       config.Credentials.Scopes,
 			Endpoint: oauth2.Endpoint{
+				AuthURL:  config.Credentials.AuthURL,
 				TokenURL: config.Credentials.TokenURL,
 			},
 		}, nil
