@@ -61,7 +61,7 @@ func Server() *cli.Command {
 					convert.NewConvertController,
 					middleware.NewSessionMiddleware,
 					chttp.NewService, web.NewServer,
-					client.NewDropboxAuthClient,
+					client.NewMinioAuthClient,
 				),
 			).Bootstrap()
 

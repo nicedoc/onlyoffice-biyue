@@ -37,7 +37,7 @@ func Server() *cli.Command {
 					shared.BuildNewOnlyofficeConfig(configPath),
 					shared.BuildNewIntegrationCredentialsConfig(configPath),
 					controller.NewCallbackController,
-					client.NewDropboxAuthClient,
+					client.NewMinioAuthClient,
 				),
 			).Bootstrap()
 

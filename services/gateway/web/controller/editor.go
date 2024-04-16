@@ -43,7 +43,7 @@ import (
 
 type EditorController struct {
 	client      client.Client
-	api         aclient.DropboxClient
+	api         aclient.MinioClient
 	jwtManager  crypto.JwtManager
 	hasher      crypto.Hasher
 	fileUtil    onlyoffice.OnlyofficeFileUtility
@@ -56,7 +56,7 @@ type EditorController struct {
 
 func NewEditorController(
 	client client.Client,
-	api aclient.DropboxClient,
+	api aclient.MinioClient,
 	jwtManager crypto.JwtManager,
 	hasher crypto.Hasher,
 	fileUtil onlyoffice.OnlyofficeFileUtility,

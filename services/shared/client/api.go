@@ -39,8 +39,9 @@ import (
 )
 
 var ErrInvalidResponsePayload = errors.New("invalid response payload")
+var ErrUnauthorized = errors.New("unauthorized")
 
-type DropboxClient struct {
+type MinioClient struct {
 	client      *resty.Client
 	s3client    *minio.Client
 	credentials *oauth2.Config
@@ -48,11 +49,11 @@ type DropboxClient struct {
 	s3Config    *shared.S3Config
 }
 
-func NewDropboxAuthClient(
+func NewMinioAuthClient(
 	credentials *oauth2.Config,
 	s3Config *shared.S3Config,
 	logger log.Logger,
-) DropboxClient {
+) MinioClient {
 	otelClient := otelhttp.DefaultClient
 	otelClient.Transport = otelhttp.NewTransport(&http.Transport{
 		Proxy:                 http.ProxyFromEnvironment,
@@ -65,7 +66,7 @@ func NewDropboxAuthClient(
 
 	s3Client, _ := minio.New(s3Config.S3.Url, s3Config.S3.AccessKey, s3Config.S3.SecretKey, false)
 
-	return DropboxClient{
+	return MinioClient{
 		client: resty.NewWithClient(otelClient).
 			SetRedirectPolicy(resty.RedirectPolicyFunc(func(req *http.Request, via []*http.Request) error {
 				return http.ErrUseLastResponse
@@ -85,14 +86,17 @@ func NewDropboxAuthClient(
 	}
 }
 
-func (c DropboxClient) GetUser(ctx context.Context, token string) (response.BiyueUserResponse, error) {
+func (c MinioClient) GetUser(ctx context.Context, token string) (response.BiyueUserResponse, error) {
 	const url = "http://keycloak.localtest.me:8080/realms/biyue/protocol/openid-connect/userinfo?client_id=biyue&username=biyue"
 	var res response.BiyueUserResponse
-	if _, err := c.client.R().
-		SetAuthToken(token).
-		SetResult(&res).
-		Get(url); err != nil {
+	rsp, err := c.client.R().SetAuthToken(token).SetResult(&res).Get(url)
+	if err != nil {
 		return res, err
+	}
+
+	// if http return 401 then we need to refresh token
+	if rsp.StatusCode() == http.StatusUnauthorized {
+		return res, ErrUnauthorized
 	}
 
 	if res.AccountID == "" {
@@ -102,7 +106,7 @@ func (c DropboxClient) GetUser(ctx context.Context, token string) (response.Biyu
 	return res, nil
 }
 
-func (c DropboxClient) GetFile(ctx context.Context, path, token string) (response.BiyueFileResponse, error) {
+func (c MinioClient) GetFile(ctx context.Context, path, token string) (response.BiyueFileResponse, error) {
 	var res response.BiyueFileResponse
 
 	if c.s3client == nil {
@@ -140,7 +144,7 @@ func (c DropboxClient) GetFile(ctx context.Context, path, token string) (respons
 	return res, nil
 }
 
-func (c DropboxClient) GetDownloadLink(ctx context.Context, path, token string) (response.BiyueDownloadResponse, error) {
+func (c MinioClient) GetDownloadLink(ctx context.Context, path, token string) (response.BiyueDownloadResponse, error) {
 	var res response.BiyueDownloadResponse
 
 	if c.s3client == nil {
@@ -173,7 +177,7 @@ func (c DropboxClient) GetDownloadLink(ctx context.Context, path, token string) 
 	return res, nil
 }
 
-func (c DropboxClient) uploadFile(ctx context.Context, path, token, mode string, file io.Reader) (response.BiyueFileResponse, error) {
+func (c MinioClient) uploadFile(ctx context.Context, path, token, mode string, file io.Reader) (response.BiyueFileResponse, error) {
 	var res response.BiyueFileResponse
 
 	if c.s3client == nil {
@@ -220,22 +224,21 @@ func (c DropboxClient) uploadFile(ctx context.Context, path, token, mode string,
 	res.SModified = time.Now().String()
 	res.PathDisplay = "/" + c.s3Config.S3.Bucket + "/" + path
 	res.PathLower = res.PathDisplay
-	res.Rev = ""
-	res.Name = path
 	res.Size = int(n)
+	res.Rev = ""
 
 	return res, nil
 }
 
-func (c DropboxClient) CreateFile(ctx context.Context, path, token string, file io.Reader) (response.BiyueFileResponse, error) {
+func (c MinioClient) CreateFile(ctx context.Context, path, token string, file io.Reader) (response.BiyueFileResponse, error) {
 	return c.uploadFile(ctx, path, token, "add", file)
 }
 
-func (c DropboxClient) UploadFile(ctx context.Context, path, token string, file io.Reader) (response.BiyueFileResponse, error) {
+func (c MinioClient) UploadFile(ctx context.Context, path, token string, file io.Reader) (response.BiyueFileResponse, error) {
 	return c.uploadFile(ctx, path, token, "overwrite", file)
 }
 
-func (c DropboxClient) SaveFileFromURL(ctx context.Context, path, url, token string) error {
+func (c MinioClient) SaveFileFromURL(ctx context.Context, path, url, token string) error {
 	if _, err := c.client.R().
 		SetBody(map[string]string{
 			"path": path,

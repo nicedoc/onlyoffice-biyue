@@ -28,6 +28,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/gorilla/csrf"
 	"github.com/nicedoc/onlyoffice-biyue/services/gateway/web/embeddable"
+	"github.com/nicedoc/onlyoffice-biyue/services/shared/client"
 	"github.com/nicedoc/onlyoffice-biyue/services/shared/request"
 	"github.com/nicedoc/onlyoffice-biyue/services/shared/response"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
@@ -95,6 +96,11 @@ func (c ConvertController) BuildConvertPage() http.HandlerFunc {
 
 		select {
 		case err := <-errChan:
+			if err == client.ErrUnauthorized {
+				http.Redirect(rw, r, "/oauth/install", http.StatusMovedPermanently)
+				return
+			}
+
 			c.logger.Errorf("could not get user/file: %s", err.Error())
 			// TODO: Generic error page
 			if err := embeddable.ErrorPage.ExecuteTemplate(rw, "error", map[string]interface{}{

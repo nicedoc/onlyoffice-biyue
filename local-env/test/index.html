@@ -25,7 +25,7 @@
         } else {
             // add the objects to the div with id "output"
             data.Contents.forEach((object) => {
-                var url = `http://gateway.localtest.me:4044/convert?file_id=${object.Key}`;
+                var url = `http://gateway.localtest.me:4044/convert?file_id=${encodeURIComponent(object.Key)}`;
                 //     "redirect_url": "https://dropbox.onlyoffice.com/convert?file_id=id%3AWA_OuPLikCcAAAAAAAAABg&require_role=personal"
                 document.getElementById('output').innerHTML += `<ul><a href="${url}">${object.Key}</a></ul>`;
             });

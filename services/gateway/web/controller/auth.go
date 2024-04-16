@@ -41,7 +41,7 @@ import (
 
 type AuthController struct {
 	client         client.Client
-	api            aclient.DropboxClient
+	api            aclient.MinioClient
 	jwtManager     crypto.JwtManager
 	stateGenerator crypto.StateGenerator
 	store          *sessions.CookieStore
@@ -52,7 +52,7 @@ type AuthController struct {
 
 func NewAuthController(
 	client client.Client,
-	api aclient.DropboxClient,
+	api aclient.MinioClient,
 	jwtManager crypto.JwtManager,
 	stateGenerator crypto.StateGenerator,
 	config *config.ServerConfig,

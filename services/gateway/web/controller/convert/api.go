@@ -46,7 +46,7 @@ import (
 
 type ConvertController struct {
 	client      client.Client
-	api         aclient.DropboxClient
+	api         aclient.MinioClient
 	jwtManager  crypto.JwtManager
 	fileUtil    onlyoffice.OnlyofficeFileUtility
 	store       *sessions.CookieStore
@@ -58,7 +58,7 @@ type ConvertController struct {
 }
 
 func NewConvertController(
-	client client.Client, api aclient.DropboxClient, jwtManager crypto.JwtManager,
+	client client.Client, api aclient.MinioClient, jwtManager crypto.JwtManager,
 	fileUtil onlyoffice.OnlyofficeFileUtility, onlyoffice *shared.OnlyofficeConfig, hasher crypto.Hasher,
 	server *config.ServerConfig, credentials *oauth2.Config, logger log.Logger,
 ) ConvertController {
