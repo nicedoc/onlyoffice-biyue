@@ -30,7 +30,7 @@ services:
       - CREDENTIALS_CLIENT_SECRET=MaaS1q6oSm351t5TL0v6Pt64laTmTwfg
       - CREDENTIALS_REDIRECT_URL=http://gateway.localtest.me:4044/oauth/redirect
       - CREDENTIALS_SCOPES=openid profile email phone address
-      - CREDENTIALS_AUTHORIZATION_URL=http://keycloak.localtest.me:8080/realms/biyue/protocol/openid-connect/auth
+      - CREDENTIALS_AUTH_URL=http://keycloak.localtest.me:8080/realms/biyue/protocol/openid-connect/auth
       - CREDENTIALS_TOKEN_URL=http://keycloak.localtest.me:8080/realms/biyue/protocol/openid-connect/token
       # S3 minio
       #{"url":"http://minio.localtest.me:9090"
@@ -57,8 +57,7 @@ services:
     networks:
       keycloak: 
         aliases:
-          - gateway.localtest.me
-      
+          - gateway.localtest.me  
 
   auth:
     build:
@@ -156,19 +155,6 @@ services:
       ME_CONFIG_MONGODB_URL: mongodb://root:example@mongo:27017/
     networks:
       keycloak: {}      
-  # otel-collector:
-  #   # image: otel/opentelemetry-collector-contrib
-  #   image: otel/opentelemetry-collector
-  #   #volumes:
-  #     #- ./otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml
-  #   ports:
-  #     - 1888:1888 # pprof extension
-  #     - 8888:8888 # Prometheus metrics exposed by the Collector
-  #     - 8889:8889 # Prometheus exporter metrics
-  #     - 13133:13133 # health_check extension
-  #     - 4317:4317 # OTLP gRPC receiver
-  #     - 4318:4318 # OTLP http receiver
-  #     - 55679:55679 # zpages extension
   
   jaeger:
     image: jaegertracing/all-in-one:1.56
@@ -184,8 +170,6 @@ services:
       keycloak:
         aliases:
           - jaeger.localtest.me
-
-
 
   consul:
     image: consul:1.15.4
@@ -264,7 +248,6 @@ services:
 
 networks:
   keycloak: {}
-  httpbin: {}
   oauth2-proxy: {}
 
 

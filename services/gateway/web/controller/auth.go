@@ -113,8 +113,8 @@ func (c AuthController) BuildGetAuth() http.HandlerFunc {
 		http.Redirect(
 			rw, r,
 			fmt.Sprintf(
-				"http://keycloak.localtest.me:8080/realms/biyue/protocol/openid-connect/auth?response_type=%s&client_id=%s&redirect_uri=%s&token_access_type=%s&state=%s&code_challenge=%s&code_challenge_method=%s&force_reapprove=true&disable_signup=true&scope=openid",
-				//"https://dropbox.com/oauth2/authorize?response_type=%s&client_id=%s&redirect_uri=%s&token_access_type=%s&state=%s&code_challenge=%s&code_challenge_method=%s&force_reapprove=true&disable_signup=true&include_granted_scopes=user",
+				"%s?response_type=%s&client_id=%s&redirect_uri=%s&token_access_type=%s&state=%s&code_challenge=%s&code_challenge_method=%s&force_reapprove=true&disable_signup=true&scope=openid",
+				c.oauth.Endpoint.AuthURL,
 				"code",
 				c.oauth.ClientID,
 				url.QueryEscape(c.oauth.RedirectURL),

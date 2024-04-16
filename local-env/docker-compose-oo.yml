@@ -1,0 +1,63 @@
+version: '2'
+services:
+  onlyoffice-documentserver:
+    build:
+      context: .
+      dockerfile: DevDockerFile 
+    container_name: onlyoffice-documentserver
+    depends_on:
+      - onlyoffice-postgresql
+      - onlyoffice-rabbitmq
+    environment:
+      - DB_TYPE=postgres
+      - DB_HOST=onlyoffice-postgresql
+      - DB_PORT=5432
+      - DB_NAME=onlyoffice
+      - DB_USER=onlyoffice
+      - AMQP_URI=amqp://guest:guest@onlyoffice-rabbitmq
+      # Uncomment strings below to enable the JSON Web Token validation.
+      - JWT_ENABLED=true
+      - JWT_SECRET=nZPjI3XNp818tl7H8ovVTgmjOz9RuWts
+      - JWT_HEADER=Authorization
+      - JWT_IN_BODY=false
+    ports:
+      - '80:80'
+      - '443:443'
+    stdin_open: true
+    restart: no
+    stop_grace_period: 60s
+    volumes:
+       - /var/www/onlyoffice/Data
+       - /var/log/onlyoffice
+       - /var/lib/onlyoffice/documentserver/App_Data/cache/files
+       - /var/www/onlyoffice/documentserver-example/public/files
+       - /usr/share/fonts
+       
+  onlyoffice-rabbitmq:
+    container_name: onlyoffice-rabbitmq
+    image: rabbitmq
+    restart: always
+    expose:
+      - '5672'
+ 
+  onlyoffice-postgresql:
+    container_name: onlyoffice-postgresql
+    image: postgres:12
+    environment:
+      - POSTGRES_DB=onlyoffice
+      - POSTGRES_USER=onlyoffice
+      - POSTGRES_HOST_AUTH_METHOD=trust
+    restart: always
+    expose:
+      - '5432'
+    volumes:
+      - postgresql_data:/var/lib/postgresql
+ 
+volumes:
+  postgresql_data:
+
+networks:
+  default:
+    name: local-env_keycloak
+    external: true
+

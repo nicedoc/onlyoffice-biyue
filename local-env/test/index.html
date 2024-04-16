@@ -14,11 +14,12 @@
             secretAccessKey: 'minio123', // MINIO_ROOT_PASSWORD
         },
         s3ForcePathStyle: true, // important
-        });
+        });       
+       
 
         // list objects in a bucket
         config.listObjects({
-        Bucket: 'test',
+            Bucket: 'test',
         }, (err, data) => {
         if (err) {
             console.log(err);
