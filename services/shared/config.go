@@ -142,22 +142,18 @@ func (c *OnlyofficeCallbackConfig) Validate() error {
 	return nil
 }
 
-type S3Config struct {
-	S3 struct {
-		Bucket    string `yaml:"bucket" env:"S3_BUCKET"`
-		Region    string `yaml:"region" env:"S3_REGION"`
-		Url       string `yaml:"url" env:"S3_URL"`
-		AccessKey string `yaml:"access_key" env:"S3_ACCESS_KEY"`
-		SecretKey string `yaml:"secret_key" env:"S3_SECRET_KEY"`
-		Api       string `yaml:"api" env:"S3_API"`
-		Path      string `yaml:"path" env:"S3_PATH"`
-	} `yaml:"s3"`
+type BiyueConfig struct {
+	Biyue struct {
+		ApiEndPoint  string `yaml:"api_endpoint" env:"BIYUE_API_ENDPOINT"`
+		ApiTestToken string `yaml:"api_test_token" env:"BIYUE_API_TEST_TOKEN"`
+		AuthEndPoint string `yaml:"api_auth_point" env:"BIYUE_AUTH_ENDPOINT"`
+	} `yaml:"biyue"`
 }
 
-func (sc *S3Config) Validate() error {
-	if sc.S3.Url == "" {
+func (sc *BiyueConfig) Validate() error {
+	if sc.Biyue.ApiEndPoint == "" {
 		return &InvalidConfigurationParameterError{
-			Parameter: "s3 URL",
+			Parameter: "Biyue Api endpoint",
 			Reason:    "Should not be empty",
 		}
 	}
@@ -165,9 +161,9 @@ func (sc *S3Config) Validate() error {
 	return nil
 }
 
-func BuildNewS3Config(path string) func() (*S3Config, error) {
-	return func() (*S3Config, error) {
-		var config S3Config
+func BuildNewBiyueConfig(path string) func() (*BiyueConfig, error) {
+	return func() (*BiyueConfig, error) {
+		var config BiyueConfig
 		if path != "" {
 			file, err := os.Open(path)
 			if err != nil {

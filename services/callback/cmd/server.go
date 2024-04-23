@@ -33,7 +33,7 @@ func Server() *cli.Command {
 			app := pkg.NewBootstrapper(
 				configPath, pkg.WithModules(
 					chttp.NewService, web.NewServer,
-					shared.BuildNewS3Config(configPath),
+					shared.BuildNewBiyueConfig(configPath),
 					shared.BuildNewOnlyofficeConfig(configPath),
 					shared.BuildNewIntegrationCredentialsConfig(configPath),
 					controller.NewCallbackController,

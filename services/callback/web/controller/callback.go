@@ -178,6 +178,8 @@ func (c CallbackController) BuildPostHandleCallback() http.HandlerFunc {
 						return
 					}
 
+					c.logger.Debugf("get new version file from url[%s] from body[%s]", body.URL, resp.Body)
+
 					fileChan <- resp.Body
 				}()
 
@@ -205,7 +207,7 @@ func (c CallbackController) BuildPostHandleCallback() http.HandlerFunc {
 					return
 				}
 
-				if _, err := c.api.UploadFile(tctx, fl.PathDisplay, ures.AccessToken, body); err != nil {
+				if _, err := c.api.UploadFile(tctx, fl.PaperUuid, fl.PathDisplay, ures.AccessToken, fl.Rev, body); err != nil {
 					c.sendErrorResponse(
 						fmt.Sprintf("could not upload file changes: %s", err.Error()), rw,
 					)

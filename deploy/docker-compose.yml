@@ -1,7 +1,7 @@
 version: '3.8'
 services:
   onlyoffice-documentserver:
-    image: oodev    
+    image: registry.nicedoc.cn/nicedoc-documentserver   
     container_name: onlyoffice-documentserver
     depends_on:
       - onlyoffice-postgresql
@@ -55,13 +55,16 @@ services:
       - '5432'
     volumes:
       - postgresql_data:/var/lib/postgresql
+  
+  onlyoffice-biyueplugin:
+    container_name: onlyoffice-biyueplugin
+    image: registry.nicedoc.cn/biyue-plugin
+    restart: always
+    volumes:
+      - plugin_data:/var/www/onlyoffice/documentserver/sdkjs-plugins/biyue
 
-
-  gateway:
-    build:
-      context: ../
-      target: gateway
-    image: registry.nicedoc.cn/biyue-gateway:${PRODUCT_VERSION}
+  gateway:    
+    image: registry.nicedoc.cn/biyue-gateway
     volumes:
       - ./services/gateway/config:/usr/src/app/config
     environment:
@@ -115,11 +118,8 @@ services:
         aliases:
           - gateway.localtest.me  
 
-  auth:
-    build:
-      context: ../
-      target: auth
-    image: registry.nicedoc.cn/biyue-auth:${PRODUCT_VERSION}
+  auth:    
+    image: registry.nicedoc.cn/biyue-auth
     environment:
       - SERVER_NAMESPACE=biyue
       - SERVER_NAME=auth
@@ -140,10 +140,7 @@ services:
       - REGISTRY_TYPE=2
 
   callback:
-    build:
-      context: ../
-      target: callback
-    image: registry.nicedoc.cn/biyue-callback:${PRODUCT_VERSION}
+    image: registry.nicedoc.cn/biyue-callback
     environment:
       # ServerConfig
       - SERVER_NAMESPACE=biyue

@@ -22,7 +22,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"net/url"
 	"strings"
 	"time"
 
@@ -32,6 +31,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/gorilla/sessions"
 	"github.com/nicedoc/onlyoffice-biyue/services/gateway/web/embeddable"
+	"github.com/nicedoc/onlyoffice-biyue/services/shared"
 	aclient "github.com/nicedoc/onlyoffice-biyue/services/shared/client"
 	"github.com/nicedoc/onlyoffice-biyue/services/shared/response"
 	cv "github.com/nirasan/go-oauth-pkce-code-verifier"
@@ -48,6 +48,7 @@ type AuthController struct {
 	config         *config.ServerConfig
 	oauth          *oauth2.Config
 	logger         log.Logger
+	biyueConfig    *shared.BiyueConfig
 }
 
 func NewAuthController(
@@ -58,6 +59,7 @@ func NewAuthController(
 	config *config.ServerConfig,
 	oauth *oauth2.Config,
 	logger log.Logger,
+	biyueConfig *shared.BiyueConfig,
 ) AuthController {
 	return AuthController{
 		client:         client,
@@ -68,12 +70,13 @@ func NewAuthController(
 		config:         config,
 		oauth:          oauth,
 		logger:         logger,
+		biyueConfig:    biyueConfig,
 	}
 }
 
 func (c AuthController) getRedirectURL(rw http.ResponseWriter, r *http.Request) string {
 	session, _ := c.store.Get(r, "url")
-	url := "http://start.localtest.me:9080"
+	url := "https://eduteacher.xmdas-link.com/question/"
 
 	if val, ok := session.Values["redirect"].(string); ok {
 		url = val
@@ -85,6 +88,21 @@ func (c AuthController) getRedirectURL(rw http.ResponseWriter, r *http.Request) 
 	}
 
 	return url
+}
+
+func (c AuthController) BuildTest() http.HandlerFunc {
+	return func(rw http.ResponseWriter, r *http.Request) {
+		rw.Header().Set("X-Token", c.biyueConfig.Biyue.ApiTestToken)
+		session, _ := c.store.Get(r, "auth-installation")
+		session.Values["X-Token"] = c.biyueConfig.Biyue.ApiTestToken
+		if err := session.Save(r, rw); err != nil {
+			c.logger.Debugf("could not save session. Reason: %s", err.Error())
+		}
+
+		if err := embeddable.TestPage.Execute(rw, nil); err != nil {
+			c.logger.Errorf("could not execute a test template: %w", err)
+		}
+	}
 }
 
 func (c AuthController) BuildGetAuth() http.HandlerFunc {
@@ -104,27 +122,42 @@ func (c AuthController) BuildGetAuth() http.HandlerFunc {
 		session.Values["state"] = state
 		c.logger.Debug("set session state: ", state)
 
+		xtoken := r.Header.Get("X-Token")
+		if xtoken == "" {
+			if session.Values["X-Token"] == nil {
+				http.Redirect(rw, r, c.biyueConfig.Biyue.AuthEndPoint, http.StatusMovedPermanently)
+				return
+			}
+			xtoken = session.Values["X-Token"].(string)
+		}
+		session.Values["X-Token"] = xtoken
+		c.logger.Debugf("set session token: %s", xtoken)
+
 		if err := session.Save(r, rw); err != nil {
 			c.logger.Debugf("could not save session. Reason: %s", err.Error())
 			http.Redirect(rw, r, "/oauth/install", http.StatusMovedPermanently)
 			return
 		}
 
-		http.Redirect(
-			rw, r,
-			fmt.Sprintf(
-				"%s?response_type=%s&client_id=%s&redirect_uri=%s&token_access_type=%s&state=%s&code_challenge=%s&code_challenge_method=%s&force_reapprove=true&disable_signup=true&scope=openid",
-				c.oauth.Endpoint.AuthURL,
-				"code",
-				c.oauth.ClientID,
-				url.QueryEscape(c.oauth.RedirectURL),
-				"offline",
-				url.QueryEscape(state),
-				v.CodeChallengeS256(),
-				"S256",
-			),
-			http.StatusMovedPermanently,
-		)
+		http.Redirect(rw, r.WithContext(r.Context()),
+			fmt.Sprintf("/oauth/redirect?state=%s&code=%s", state, verifier),
+			http.StatusSeeOther)
+
+		// http.Redirect(
+		// 	rw, r,
+		// 	fmt.Sprintf(
+		// 		"%s?response_type=%s&client_id=%s&redirect_uri=%s&token_access_type=%s&state=%s&code_challenge=%s&code_challenge_method=%s&force_reapprove=true&disable_signup=true&scope=openid",
+		// 		"/oauth/redirect",
+		// 		"code",
+		// 		c.oauth.ClientID,
+		// 		url.QueryEscape(c.oauth.RedirectURL),
+		// 		"offline",
+		// 		url.QueryEscape(state),
+		// 		v.CodeChallengeS256(),
+		// 		"S256",
+		// 	),
+		// 	http.StatusMovedPermanently,
+		// )
 	}
 }
 
@@ -157,42 +190,15 @@ func (c AuthController) BuildGetRedirect() http.HandlerFunc {
 			return
 		}
 
-		token, err, _ := group.Do(code, func() (interface{}, error) {
-			state := strings.TrimSpace(query.Get("state"))
-			if state != session.Values["state"] {
-				c.logger.Errorf("state %s doesn't match %s", state, session.Values["state"])
-				return nil, ErrInvalidStateValue
-			}
-
-			c.logger.Debugf("auth state is valid: %s", state)
-
-			vefifier, ok := session.Values["verifier"].(string)
-			if !ok {
-				return nil, err
-			}
-
-			c.logger.Debugf("verifier is valid: %s", vefifier)
-
-			session.Options.MaxAge = -1
-			if err := session.Save(r, rw); err != nil {
-				return nil, fmt.Errorf("could not save a cookie session: %w", err)
-			}
-
-			t, err := c.oauth.Exchange(tctx, code, oauth2.SetAuthURLParam("code_verifier", vefifier), oauth2.SetAuthURLParam("scope", "openid"))
-			if err != nil {
-				return nil, fmt.Errorf("could not exchange oauth tokens: %w", err)
-			}
-
-			return t, nil
-		})
-
-		t, ok := token.(*oauth2.Token)
-		if err != nil || !ok {
-			if err := embeddable.InstallationErrorPage.Execute(rw, errMsg); err != nil {
-				c.logger.Errorf("could not execute an installation error template: %w", err)
-			}
-			return
+		xtoken := session.Values["X-Token"].(string)
+		t := &oauth2.Token{
+			AccessToken:  xtoken,
+			RefreshToken: xtoken,
+			TokenType:    "Bearer",
 		}
+		t = t.WithExtra(map[string]interface{}{
+			"scope": "openid offline",
+		})
 
 		c.logger.Debugf("get token ok: %v", t)
 
@@ -204,14 +210,14 @@ func (c AuthController) BuildGetRedirect() http.HandlerFunc {
 			return
 		}
 
-		c.logger.Debugf("get user ok: %s", usr.AccountID)
+		c.logger.Debugf("get user ok: %s", usr.UserID)
 
 		var resp interface{}
 		if err := c.client.Call(r.Context(), c.client.NewRequest(
 			fmt.Sprintf("%s:auth", c.config.Namespace),
 			"UserInsertHandler.InsertUser",
 			response.UserResponse{
-				ID:           usr.AccountID,
+				ID:           usr.UserID,
 				AccessToken:  t.AccessToken,
 				RefreshToken: t.RefreshToken,
 				TokenType:    t.TokenType,
@@ -228,7 +234,7 @@ func (c AuthController) BuildGetRedirect() http.HandlerFunc {
 
 		session, _ = c.store.Get(r, "authorization")
 		tkn, err := c.jwtManager.Sign(c.oauth.ClientSecret, jwt.RegisteredClaims{
-			ID:        usr.AccountID,
+			ID:        usr.UserID,
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(25 * time.Hour)),
 		})

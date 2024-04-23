@@ -22,7 +22,7 @@ resilience:
   circuit_breaker:
     timeout: 15000
 cors:
-  origins: [""]
+  origins: ["*"]
   methods: ["GET", "POST", "DELETE", "OPTIONS", "PUT"]
   headers: ["*"]
   credentials: true

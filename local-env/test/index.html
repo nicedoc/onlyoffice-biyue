@@ -1,45 +1,64 @@
 <html>
     <head>
-
+        <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1595.0.min.js"></script>
     </head>
     <style src="style.css"></style>
-    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1595.0.min.js"></script>
     
     <script>
         document.cookie = "name=value; domain=.localtest.me:4044; path=/";
-        const config = new AWS.S3({
-        endpoint: 'http://minio.localtest.me:9000', // for docker, http://minio:9000
-        credentials: {
-            accessKeyId: 'minio', // MINIO_ROOT_USER
-            secretAccessKey: 'minio123', // MINIO_ROOT_PASSWORD
-        },
-        s3ForcePathStyle: true, // important
-        });       
-       
-
-        // list objects in a bucket
-        config.listObjects({
-            Bucket: 'test',
-        }, (err, data) => {
-        if (err) {
-            console.log(err);
-        } else {
-            // add the objects to the div with id "output"
-            data.Contents.forEach((object) => {
-                var url = `http://gateway.localtest.me:4044/convert?file_id=${encodeURIComponent(object.Key)}`;
-                //     "redirect_url": "https://dropbox.onlyoffice.com/convert?file_id=id%3AWA_OuPLikCcAAAAAAAAABg&require_role=personal"
-                document.getElementById('output').innerHTML += `<ul><a href="${url}">${object.Key}</a></ul>`;
+        
+        function initializeS3() {
+            const config = new AWS.S3({
+                endpoint: 'http://minio.localtest.me:9000', // for docker, http://minio:9000
+                credentials: {
+                    accessKeyId: 'minio', // MINIO_ROOT_USER
+                    secretAccessKey: 'minio123', // MINIO_ROOT_PASSWORD
+                },
+                s3ForcePathStyle: true, // important
+            });
+            
+            // list objects in a bucket
+            config.listObjects({
+                Bucket: 'test',
+            }, (err, data) => {
+                if (err) {
+                    console.log(err);
+                } else {
+                    // add the objects to the div with id "output"
+                    data.Contents.forEach((object) => {
+                        var url = `http://gateway.localtest.me:4044/convert?file_id=${encodeURIComponent(object.Key)}`;
+                        //     "redirect_url": "https://dropbox.onlyoffice.com/convert?file_id=id%3AWA_OuPLikCcAAAAAAAAABg&require_role=personal"
+                        document.getElementById('output').innerHTML += `<ul><a href="${url}">${object.Key}</a></ul>`;
+                    });
+                }
             });
         }
-        }); 
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('openBiyue').addEventListener('click', function() {
+                console.log('openBiyue');
+                var url = `http://gateway.localtest.me:4044/convert?file_id=b2d0ed48-5b65-4149-b88d-03506274c618`;
+                // set header in request
+                var xhr = new XMLHttpRequest();
+                xhr.open('GET', url, true);
+                xhr.setRequestHeader('X-Token', '03bc9326df288f28448982232b2219a8');
+                xhr.send();
+            });
+            
+            initializeS3();
+        });
     </script>
     
     <body>
         <h1>Test</h1>
-        <p>Test</p>
-
+        
+        <button id="openBiyue">start test</button>
         <div class="container">
-            <div id="output"></div>
+            
+            <div id="output">
+                
+            </div>
+            
             <div id="iframeEditor"></div>
         </div>
     </body>

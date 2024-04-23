@@ -142,7 +142,7 @@ func (c ConvertController) convertFile(ctx context.Context, uid, fileID string) 
 
 	creq := request.ConvertRequest{
 		Async:      false,
-		Key:        string(c.hasher.Hash(file.CModified + file.ID + time.Now().String())),
+		Key:        string(c.hasher.Hash(file.CModified + file.PaperUuid + time.Now().String())),
 		Filetype:   fType,
 		Outputtype: "ooxml",
 		URL:        dres.Link,
@@ -191,7 +191,7 @@ func (c ConvertController) convertFile(ctx context.Context, uid, fileID string) 
 	defer cfile.Body.Close()
 	filename := fmt.Sprintf("%s.%s", file.Name[:len(file.Name)-len(filepath.Ext(file.Name))], cresp.FileType)
 	newPath := fmt.Sprintf("%s/%s", file.PathLower[:strings.LastIndex(file.PathLower, "/")], filename)
-	uplres, err := c.api.CreateFile(ctx, newPath, ures.AccessToken, cfile.Body)
+	uplres, err := c.api.CreateFile(ctx, file.PaperUuid, newPath, ures.AccessToken, file.Rev, cfile.Body)
 	if err != nil {
 		c.logger.Errorf("could not modify file %s: %s", fileID, err.Error())
 		return nil, err
@@ -199,7 +199,7 @@ func (c ConvertController) convertFile(ctx context.Context, uid, fileID string) 
 
 	return &request.ConvertActionRequest{
 		Action:    "edit",
-		FileID:    uplres.ID,
+		FileID:    uplres.PaperUuid,
 		ForceEdit: false,
 	}, nil
 }

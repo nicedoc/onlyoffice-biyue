@@ -234,18 +234,18 @@ func (c EditorController) BuildEditorPage() http.HandlerFunc {
 
 		config = response.ConfigResponse{
 			Document: response.Document{
-				Key:   string(c.hasher.Hash(file.ID + file.SModified)),
+				Key:   string(c.hasher.Hash(file.PaperUuid + file.SModified)),
 				Title: file.Name,
 				URL:   durl.Link,
 			},
 			EditorConfig: response.EditorConfig{
 				User: response.User{
-					ID:   usr.AccountID,
-					Name: usr.DisplayName,
+					ID:   usr.UserID,
+					Name: usr.PersonName,
 				},
 				CallbackURL: fmt.Sprintf(
 					"%s/callback?id=%s",
-					c.onlyoffice.Onlyoffice.Builder.CallbackURL, file.ID,
+					c.onlyoffice.Onlyoffice.Builder.CallbackURL, file.PaperUuid,
 				),
 				Customization: response.Customization{
 					Goback: response.Goback{

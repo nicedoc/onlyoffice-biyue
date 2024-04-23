@@ -40,6 +40,7 @@ func (c ConvertController) BuildConvertPage() http.HandlerFunc {
 		fileID := r.URL.Query().Get("file_id")
 		uid := rw.Header().Get("X-User")
 		if uid == "" {
+			c.logger.Warn("could not get user id from headers")
 			http.Redirect(rw, r, "/oauth/install", http.StatusMovedPermanently)
 			return
 		}

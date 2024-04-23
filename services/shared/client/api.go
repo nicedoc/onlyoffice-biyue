@@ -24,7 +24,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 	"time"
 
 	"github.com/ONLYOFFICE/onlyoffice-integration-adapters/log"
@@ -34,8 +33,6 @@ import (
 
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"golang.org/x/oauth2"
-
-	minio "github.com/minio/minio-go/v6"
 )
 
 var ErrInvalidResponsePayload = errors.New("invalid response payload")
@@ -43,15 +40,14 @@ var ErrUnauthorized = errors.New("unauthorized")
 
 type MinioClient struct {
 	client      *resty.Client
-	s3client    *minio.Client
 	credentials *oauth2.Config
 	logger      log.Logger
-	s3Config    *shared.S3Config
+	s3Config    *shared.BiyueConfig
 }
 
 func NewMinioAuthClient(
 	credentials *oauth2.Config,
-	s3Config *shared.S3Config,
+	s3Config *shared.BiyueConfig,
 	logger log.Logger,
 ) MinioClient {
 	otelClient := otelhttp.DefaultClient
@@ -63,8 +59,6 @@ func NewMinioAuthClient(
 		ResponseHeaderTimeout: 8 * time.Second,
 		ExpectContinueTimeout: 4 * time.Second,
 	})
-
-	s3Client, _ := minio.New(s3Config.S3.Url, s3Config.S3.AccessKey, s3Config.S3.SecretKey, false)
 
 	return MinioClient{
 		client: resty.NewWithClient(otelClient).
@@ -82,160 +76,131 @@ func NewMinioAuthClient(
 		credentials: credentials,
 		logger:      logger,
 		s3Config:    s3Config,
-		s3client:    s3Client,
 	}
 }
 
 func (c MinioClient) GetUser(ctx context.Context, token string) (response.BiyueUserResponse, error) {
-	const url = "http://keycloak.localtest.me:8080/realms/biyue/protocol/openid-connect/userinfo?client_id=biyue&username=biyue"
-	var res response.BiyueUserResponse
-	rsp, err := c.client.R().SetAuthToken(token).SetResult(&res).Get(url)
+	url := c.s3Config.Biyue.ApiEndPoint + "/get/user"
+
+	type UserResponse struct {
+		Code int                        `json:"code"`
+		User response.BiyueUserResponse `json:"data"`
+	}
+	var res UserResponse
+
+	rsp, err := c.client.R().
+		SetHeader("X-Token", token).
+		SetResult(&res).
+		Get(url)
 	if err != nil {
-		return res, err
+		return res.User, err
 	}
 
 	// if http return 401 then we need to refresh token
 	if rsp.StatusCode() == http.StatusUnauthorized {
-		return res, ErrUnauthorized
+		return res.User, ErrUnauthorized
 	}
 
-	if res.AccountID == "" {
-		return res, ErrInvalidResponsePayload
+	c.logger.Debug("get user response: ", res, rsp)
+	if res.User.UserID == "" {
+		return res.User, ErrInvalidResponsePayload
 	}
 
-	return res, nil
+	return res.User, nil
+}
+
+type FileResponse struct {
+	Code    int                        `json:"code"`
+	File    response.BiyueFileResponse `json:"data"`
+	Message string                     `json:"message"`
 }
 
 func (c MinioClient) GetFile(ctx context.Context, path, token string) (response.BiyueFileResponse, error) {
-	var res response.BiyueFileResponse
-
-	if c.s3client == nil {
-		minioClient, err := minio.New(c.s3Config.S3.Url,
-			c.s3Config.S3.AccessKey, c.s3Config.S3.SecretKey,
-			false,
-		)
-		if err != nil {
-			c.logger.Errorf("could not create minio client: %s, url=[%s]", err, c.s3Config.S3.Url)
-			return res, err
-		}
-
-		c.s3client = minioClient
-	}
+	var res FileResponse
 
 	// TODO 中文文件名字处理
-	key, _ := url.QueryUnescape(path)
+	//key, _ := url.QueryUnescape(path)
+	rsp, err := c.client.R().
+		SetHeader("X-Token", token).
+		SetQueryParam("paper_uuid", path).
+		SetResult(&res).
+		Get(c.s3Config.Biyue.ApiEndPoint + "/get/file")
 
-	info, err := c.s3client.StatObject(c.s3Config.S3.Bucket, key, minio.StatObjectOptions{})
+	c.logger.Debug("get file response: ", res, rsp)
 	if err != nil {
-		c.logger.Debugf("could not get file stat info: [%s], path=[%s]", err, path)
-		return res, err
+		return res.File, err
 	}
 
-	c.logger.Debug("file meta info : ", info)
-	res.ID = info.Key
-	res.CModified = info.LastModified.String()
-	res.SModified = info.LastModified.String()
-	res.PathDisplay = "/" + c.s3Config.S3.Bucket + "/" + info.Key
-	res.PathLower = res.PathDisplay
-	res.Rev = ""
-	res.Name = info.Key
-	res.Size = int(info.Size)
-
-	return res, nil
+	return res.File, nil
 }
 
 func (c MinioClient) GetDownloadLink(ctx context.Context, path, token string) (response.BiyueDownloadResponse, error) {
-	var res response.BiyueDownloadResponse
 
-	if c.s3client == nil {
-		minioClient, err := minio.New(c.s3Config.S3.Url,
-			c.s3Config.S3.AccessKey, c.s3Config.S3.SecretKey,
-			false,
-		)
-		if err != nil {
-			return res, err
-		}
-
-		c.s3client = minioClient
+	type DownloadResponse struct {
+		Code     int                            `json:"code"`
+		Download response.BiyueDownloadResponse `json:"data"`
 	}
 
-	expiresIn := time.Minute * 15
-	objectName := path
-	bucketName := c.s3Config.S3.Bucket
-	reqParams := make(url.Values)
-	presignedUrl, err := c.s3client.PresignedGetObject(bucketName, objectName, expiresIn, reqParams)
+	var res DownloadResponse
+
+	rsp, err := c.client.R().
+		SetHeader("X-Token", token).
+		SetQueryParam("paper_uuid", path).
+		SetResult(&res).
+		Get(c.s3Config.Biyue.ApiEndPoint + "/get/url")
+
+	c.logger.Debug("presigned url: ", res, rsp)
+
 	if err != nil {
-		return res, err
+		return res.Download, err
 	}
 
-	// TODO 暂时设置成public的bucket
-	presignedUrl.RawQuery = ""
-	res.Link = presignedUrl.String()
+	if res.Download.Link == "" {
+		return res.Download, ErrInvalidResponsePayload
+	}
 
-	c.logger.Debug("presigned url: ", res.Link)
-
-	return res, nil
+	return res.Download, nil
 }
 
-func (c MinioClient) uploadFile(ctx context.Context, path, token, mode string, file io.Reader) (response.BiyueFileResponse, error) {
-	var res response.BiyueFileResponse
+func (c MinioClient) uploadFile(ctx context.Context, uuid, path, token, rev, mode string, file io.Reader) (response.BiyueFileResponse, error) {
 
-	if c.s3client == nil {
-		minioClient, err := minio.New(c.s3Config.S3.Url,
-			c.s3Config.S3.AccessKey, c.s3Config.S3.SecretKey,
-			false,
-		)
-		if err != nil {
-			return res, err
-		}
+	// otel trace
 
-		c.s3client = minioClient
-	}
+	var res FileResponse
 
-	n, err := c.s3client.PutObject(c.s3Config.S3.Bucket, path, file, -1, minio.PutObjectOptions{})
+	url := c.s3Config.Biyue.ApiEndPoint + "/upload"
+
+	c.logger.Debugf("upload file: [%s], [%s], [%s]", path, token, rev)
+
+	rsp, err := c.client.R().
+		SetHeader("X-Token", token).
+		SetFileReader("file", path, file).
+		SetResult(&res).
+		SetFormData(map[string]string{
+			"paper_uuid":      uuid,
+			"client_modified": time.Now().Format("2006-01-02 15:04:05"),
+			"rev":             rev,
+			"mode":            mode,
+		}).Post(url)
+
+	c.logger.Debug("upload file response: ", res, rsp)
 	if err != nil {
-		return res, err
+		return res.File, err
 	}
 
-	// req, err := http.NewRequest("POST", "https://content.dropboxapi.com/2/files/upload", file)
-	// if err != nil {
-	// 	return res, fmt.Errorf("could not build a request: %w", err)
-	// }
+	if res.Code == 0 {
+		return res.File, errors.New(res.Message)
+	}
 
-	// req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
-	// req.Header.Set("Content-Type", "application/octet-stream")
-	// req.Header.Set("Dropbox-API-Arg", fmt.Sprintf("{\"autorename\":true,\"mode\":\"%s\",\"mute\":false,\"path\":\"%s\",\"strict_conflict\":false}", mode, path))
-	// resp, err := otelhttp.DefaultClient.Do(req)
-	// if err != nil {
-	// 	return res, fmt.Errorf("could not send a request: %w", err)
-	// }
-
-	// defer resp.Body.Close()
-	// if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
-	// 	return res, fmt.Errorf("could not decode response: %w", err)
-	// }
-
-	// if res.ID == "" {
-	// 	return res, ErrInvalidResponsePayload
-	// }
-
-	res.ID = path
-	res.CModified = time.Now().String()
-	res.SModified = time.Now().String()
-	res.PathDisplay = "/" + c.s3Config.S3.Bucket + "/" + path
-	res.PathLower = res.PathDisplay
-	res.Size = int(n)
-	res.Rev = ""
-
-	return res, nil
+	return res.File, nil
 }
 
-func (c MinioClient) CreateFile(ctx context.Context, path, token string, file io.Reader) (response.BiyueFileResponse, error) {
-	return c.uploadFile(ctx, path, token, "add", file)
+func (c MinioClient) CreateFile(ctx context.Context, uuid, path, token, rev string, file io.Reader) (response.BiyueFileResponse, error) {
+	return c.uploadFile(ctx, uuid, path, token, rev, "add", file)
 }
 
-func (c MinioClient) UploadFile(ctx context.Context, path, token string, file io.Reader) (response.BiyueFileResponse, error) {
-	return c.uploadFile(ctx, path, token, "overwrite", file)
+func (c MinioClient) UploadFile(ctx context.Context, uuid, path, token, rev string, file io.Reader) (response.BiyueFileResponse, error) {
+	return c.uploadFile(ctx, uuid, path, token, rev, "overwrite", file)
 }
 
 func (c MinioClient) SaveFileFromURL(ctx context.Context, path, url, token string) error {

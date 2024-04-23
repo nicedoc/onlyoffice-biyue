@@ -31,6 +31,9 @@ var (
 	EmailPage = template.Must(template.ParseFS(
 		templateFiles, "templates/email.html",
 	))
+	TestPage = template.Must(template.ParseFS(
+		templateFiles, "templates/test.html",
+	))
 )
 
 func init() {
