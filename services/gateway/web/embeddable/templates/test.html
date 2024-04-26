@@ -5,55 +5,58 @@
     <style src="style.css"></style>
     
     <script>
-        document.cookie = "name=value; domain=.localtest.me:4044; path=/";
+        document.cookie = "name=value; domain=oogw.dxy.com; path=/";
         // header 
         // with header in request
         
 
-                
-        // function initializeS3() {
-        //     const config = new AWS.S3({
-        //         endpoint: 'http://minio.localtest.me:9000', // for docker, http://minio:9000
-        //         credentials: {
-        //             accessKeyId: 'minio', // MINIO_ROOT_USER
-        //             secretAccessKey: 'minio123', // MINIO_ROOT_PASSWORD
-        //         },
-        //         s3ForcePathStyle: true, // important
-        //     });
-            
-        //     // list objects in a bucket
-        //     config.listObjects({
-        //         Bucket: 'test',
-        //     }, (err, data) => {
-        //         if (err) {
-        //             console.log(err);
-        //         } else {
-        //             // add the objects to the div with id "output"
-        //             data.Contents.forEach((object) => {
-        //                 var url = `http://gateway.localtest.me:4044/convert?file_id=${encodeURIComponent(object.Key)}`;
-        //                 //     "redirect_url": "https://dropbox.onlyoffice.com/convert?file_id=id%3AWA_OuPLikCcAAAAAAAAABg&require_role=personal"
-        //                 document.getElementById('output').innerHTML += `<ul><a href="${url}">${object.Key}</a></ul>`;
-        //             });
-        //         }
-        //     });
-        // }
+        var header = new Headers();
+        var allCookies = document.cookie;
+        var cookies = allCookies.split(';');
         
-        // document.addEventListener('DOMContentLoaded', function() {
-        //     document.getElementById('openBiyue').addEventListener('click', function() {
-        //         console.log('openBiyue');
-        //         var url = `http://gateway.localtest.me:4044/convert?file_id=b2d0ed48-5b65-4149-b88d-03506274c618`;
-        //         // open link in iframe in div with id "iframeEditor"
-        //         document.getElementById('iframeEditor').innerHTML = `<iframe src="${url}" width="100%" height="100%"></iframe>`;
-        //     });
-            
-        //     //initializeS3();
-        // });
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('openBiyue').addEventListener('click', function() {
+                xToken = 'd0289d8216ecf3239fce43afb06101c4';
+                console.log('openBiyue');
+                var url = `/convert?file_id=3a769c4c-d032-43bf-97a9-90258819f0ab`;
+                // open link in iframe in div with id "iframeEditor"
+                fetch(url, {
+                    method: 'GET',                    
+                    credentials: "include",
+                    headers: {
+                        'X-Token': `${xToken}`,
+                        "Origin": "oogw.dcx.com",
+                    },
+                    redirect: 'follow',
+                }).then(response => {
+                    for (const pair of response.headers.entries()) {
+                          console.log(pair[0]+ ': '+ pair[1]);
+                    }
+                    console.log(response.headers.get("Set-Cookie"))     
+                    console.log(document.cookie)                   
+                })
+                .then(data => {
+                    console.log(data);
+                })
+                .catch(error => {
+                    console.error('Error:', error)
+                })                ;
+            });            
+        
+        });
     </script>
     
     <body>
         <h1>Test</h1>
         
-        <a href="/convert?file_id=3a769c4c-d032-43bf-97a9-90258819f0ab">start test</a>
+        
+        <a href="http://oogw.dcx.com/convert?file_id=3a769c4c-d032-43bf-97a9-90258819f0ab&xtoken=fc2f82ee6864fd6bef3e8fcf363c3810">start test222</a>
+        <br/>
+        <a href="/convert?file_id=3a769c4c-d032-43bf-97a9-90258819f0ab&xtoken=2a57ca2df93847fd130a0882a39fde3d">start local test</a>
+        <br/>
+        <button id="openBiyue">start test</button>
+        <br/>
         <div class="container">
             
             <div id="output">

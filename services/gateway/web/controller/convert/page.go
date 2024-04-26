@@ -38,10 +38,12 @@ func (c ConvertController) BuildConvertPage() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		rw.Header().Set("Content-Type", "text/html")
 		fileID := r.URL.Query().Get("file_id")
+
 		uid := rw.Header().Get("X-User")
 		if uid == "" {
 			c.logger.Warn("could not get user id from headers")
-			http.Redirect(rw, r, "/oauth/install", http.StatusMovedPermanently)
+			xtoken := r.URL.Query().Get("x-token")
+			http.Redirect(rw, r, fmt.Sprintf("/oauth/install?xtoken=%s", xtoken), http.StatusMovedPermanently)
 			return
 		}
 

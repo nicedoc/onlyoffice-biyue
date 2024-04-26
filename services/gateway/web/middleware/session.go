@@ -38,6 +38,19 @@ func NewSessionMiddleware(
 func (m SessionMiddleware) saveRedirectURL(rw http.ResponseWriter, r *http.Request) {
 	session, _ := m.store.Get(r, "url")
 	session.Values["redirect"] = m.onlyoffice.Onlyoffice.Builder.GatewayURL + r.URL.String()
+
+	if err := session.Save(r, rw); err != nil {
+		m.logger.Warn("could not save session")
+	}
+}
+
+func (m SessionMiddleware) saveXToken(rw http.ResponseWriter, r *http.Request) {
+	session, _ := m.store.Get(r, "auth-installation")
+	xtoken := r.URL.Query().Get("xtoken")
+	if xtoken != "" {
+		session.Values["X-Token"] = xtoken
+	}
+
 	if err := session.Save(r, rw); err != nil {
 		m.logger.Warn("could not save session")
 	}
@@ -48,6 +61,8 @@ func (m SessionMiddleware) Protect(next http.Handler) http.Handler {
 		session, err := m.store.Get(r, "authorization")
 		if err != nil {
 			m.logger.Errorf("could not get session for current user: %s", err.Error())
+			m.saveRedirectURL(rw, r)
+			m.saveXToken(rw, r)
 			http.Redirect(rw, r.WithContext(r.Context()), "/oauth/install", http.StatusSeeOther)
 			return
 		}
@@ -60,6 +75,7 @@ func (m SessionMiddleware) Protect(next http.Handler) http.Handler {
 				m.logger.Warnf("could not save a cookie session: %w", err)
 			}
 			m.saveRedirectURL(rw, r)
+			m.saveXToken(rw, r)
 			http.Redirect(rw, r.WithContext(r.Context()), "/oauth/install", http.StatusSeeOther)
 			return
 		}
@@ -72,6 +88,7 @@ func (m SessionMiddleware) Protect(next http.Handler) http.Handler {
 				m.logger.Warnf("could not save a cookie session: %w", err)
 			}
 			m.saveRedirectURL(rw, r)
+			m.saveXToken(rw, r)
 			http.Redirect(rw, r.WithContext(r.Context()), "/oauth/install", http.StatusSeeOther)
 			return
 		}
@@ -82,6 +99,7 @@ func (m SessionMiddleware) Protect(next http.Handler) http.Handler {
 				m.logger.Warnf("could not save a cookie session: %w", err)
 			}
 			m.saveRedirectURL(rw, r)
+			m.saveXToken(rw, r)
 			http.Redirect(rw, r.WithContext(r.Context()), "/oauth/install", http.StatusSeeOther)
 			return
 		}

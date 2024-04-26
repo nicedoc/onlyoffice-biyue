@@ -251,10 +251,16 @@ func (c EditorController) BuildEditorPage() http.HandlerFunc {
 					Goback: response.Goback{
 						RequestClose: false,
 					},
-					Plugins:       false,
+					Plugins:       true,
 					HideRightMenu: false,
+					Features: response.Features{
+						SpellCheck: response.SpellCheck{
+							Mode:   false,
+							Change: false,
+						},
+					},
 				},
-				Lang: usr.Locale,
+				Lang: "zh",
 			},
 			Type:      eType,
 			ServerURL: c.onlyoffice.Onlyoffice.Builder.DocumentServerURL,

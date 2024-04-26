@@ -49,3 +49,7 @@ onlyoffice:
     gateway_url: ""
     callback_url: ""
     allowed_downloads: 10
+biyue:
+  api_endpoint: "https://eduques.xmdas-link.com/bonlyoffice/oodoc"
+  api_test_token: "56f47fafdaec3584e184fbfd3f6f11d5"
+  auth_endpoint: "https://eduteacher.xmdas-link.com/question/"

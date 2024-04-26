@@ -1,0 +1,17 @@
+FROM golang:alpine AS gateway
+WORKDIR /usr/src/app
+COPY build/gateway /usr/src/app/main
+EXPOSE 4044
+CMD ["./main", "server"]
+
+FROM golang:alpine AS auth
+WORKDIR /usr/src/app
+COPY build/auth /usr/src/app/main
+EXPOSE 5069
+CMD ["./main", "server"]
+
+FROM golang:alpine AS callback
+WORKDIR /usr/src/app
+COPY build/callback /usr/src/app/main
+EXPOSE 5044
+CMD ["./main", "server"]

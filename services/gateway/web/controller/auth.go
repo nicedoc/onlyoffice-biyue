@@ -124,14 +124,23 @@ func (c AuthController) BuildGetAuth() http.HandlerFunc {
 
 		xtoken := r.Header.Get("X-Token")
 		if xtoken == "" {
-			if session.Values["X-Token"] == nil {
-				http.Redirect(rw, r, c.biyueConfig.Biyue.AuthEndPoint, http.StatusMovedPermanently)
-				return
+			xtoken = r.URL.Query().Get("xtoken")
+			if xtoken == "" {
+				if session.Values["X-Token"] == nil {
+					http.Redirect(rw, r, c.biyueConfig.Biyue.AuthEndPoint, http.StatusMovedPermanently)
+					return
+				}
+				xtoken = session.Values["X-Token"].(string)
+				c.logger.Debugf("get token from cookie: [%s]", xtoken)
+			} else {
+				c.logger.Debugf("get token from query: [%s]", xtoken)
 			}
-			xtoken = session.Values["X-Token"].(string)
+		} else {
+			c.logger.Debugf("get token from header: [%s]", xtoken)
 		}
+
 		session.Values["X-Token"] = xtoken
-		c.logger.Debugf("set session token: %s", xtoken)
+		c.logger.Debugf("set session token: [%s]", xtoken)
 
 		if err := session.Save(r, rw); err != nil {
 			c.logger.Debugf("could not save session. Reason: %s", err.Error())
@@ -190,7 +199,17 @@ func (c AuthController) BuildGetRedirect() http.HandlerFunc {
 			return
 		}
 
-		xtoken := session.Values["X-Token"].(string)
+		var xtoken string
+		if session.Values["X-Token"] == nil {
+			xtoken = r.Header.Get("X-Token")
+			if xtoken == "" {
+				c.logger.Error("empty X-Token parameter")
+				return
+			}
+		} else {
+			xtoken = session.Values["X-Token"].(string)
+		}
+
 		t := &oauth2.Token{
 			AccessToken:  xtoken,
 			RefreshToken: xtoken,

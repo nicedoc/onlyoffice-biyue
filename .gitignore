@@ -2,3 +2,5 @@
 build/auth
 build/callback
 build/gateway
+build/runner
+onlyoffice-biyue.code-workspace

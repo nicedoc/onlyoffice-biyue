@@ -61,13 +61,16 @@ run/callback:
 run/gateway:
 	@go run $(SERVICES_DIR)/gateway/main.go server -c $(SERVICES_DIR)/gateway/config/config.yml
 
+.PHONY: run/runner
+run/runner:
+	@go run $(SERVICES_DIR)/runner/main.go server -c $(SERVICES_DIR)/runner/config/config.yml
 # ==================================================================================== #
 # BUILD AND CLEANUP
 # ==================================================================================== #
 
 ## build: compile all services
 .PHONY: build
-build: build/auth build/callback build/gateway
+build: build/auth build/callback build/gateway build/runner
 
 ## build/auth: compile auth service
 .PHONY: build/auth
@@ -79,9 +82,27 @@ build/auth:
 build/callback:
 	@go build -o build/callback $(SERVICES_DIR)/callback/main.go
 
+## build/gateway: compile gateway service
 .PHONY: build/gateway
 build/gateway:
 	@go build -o build/gateway $(SERVICES_DIR)/gateway/main.go
+
+## build/runner: compile runner service
+.PHONY: build/runner
+build/runner:
+	@go build -o build/runner $(SERVICES_DIR)/runner/main.go
+
+## images: build and push docker images
+IMAGES = gateway callback auth runner
+IMAGE_TARGETS = $(addprefix images/,$(IMAGES))
+DOCKER_REGISTRY = registry.nicedoc.cn
+
+.PHONY: images
+images: $(IMAGE_TARGETS)
+
+images/%:
+	docker build . --target $* -t $(DOCKER_REGISTRY)/biyue-$*:latest
+	docker push $(DOCKER_REGISTRY)/biyue-$*:latest
 
 ## clean: remove build directory
 .PHONY: clean

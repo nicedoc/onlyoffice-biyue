@@ -25,7 +25,6 @@ import (
 	"github.com/ONLYOFFICE/onlyoffice-integration-adapters/log"
 	shttp "github.com/ONLYOFFICE/onlyoffice-integration-adapters/service/http"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
-	"github.com/gorilla/csrf"
 	"github.com/gorilla/mux"
 	"github.com/nicedoc/onlyoffice-biyue/services/gateway/web/controller"
 	"github.com/nicedoc/onlyoffice-biyue/services/gateway/web/controller/convert"
@@ -102,8 +101,7 @@ func accessControlMiddleWare(next http.Handler) http.Handler {
 
 // InitializeRoutes builds all http routes.
 func (s *GdriveHTTPService) InitializeRoutes() {
-	s.mux.Use(chimiddleware.Recoverer, chimiddleware.NoCache,
-		csrf.Protect([]byte(s.credentials.ClientSecret)))
+	s.mux.Use(chimiddleware.Recoverer, chimiddleware.NoCache) //	csrf.Protect([]byte(s.credentials.ClientSecret))
 
 	root := s.mux.NewRoute().PathPrefix("/").Subrouter()
 	root.Use(s.sessionMiddleware.Protect)

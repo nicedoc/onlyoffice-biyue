@@ -1,0 +1,20 @@
+namespace: "biyue"
+name: "runner"
+address: ":6060"
+repl_address: ":9999"
+version: 0
+nsq_lookupds: "nsqlookupd.localtest.me:4161"
+nsq_address: "nsqd.localtest.me:4150"
+nsq_topic: oo
+nsq_channel: biyue
+registry:
+  addresses: ["consul.localtest.me"]
+  type: 2
+logger:
+  name: "runner-logger"  
+  level: 1
+  color: true
+tracer:
+  enable: false
+  address: "grpc://otel-collector:4317"
+  type: 1

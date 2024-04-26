@@ -30,7 +30,7 @@ services:
        - /var/lib/onlyoffice/documentserver/App_Data/cache/files
        - /var/www/onlyoffice/documentserver-example/public/files
        - /usr/share/fonts
-       - ~/oo:/onlyoffice
+       - plugin_data:/var/www/onlyoffice/documentserver/sdkjs-plugins/biyue
     networks:
       default: 
         aliases:
@@ -179,7 +179,59 @@ services:
     networks:
       default: 
         aliases:
-          - callback.localtest.me     
+          - callback.localtest.me
+  
+  nsqd:
+    image: nsqio/nsq
+    command: /nsqd --lookupd-tcp-address=nsqlookupd:4160 --broadcast-address=nsqd.localtest.me
+    ports:
+      - "4150:4150"
+      - "4151:4151"
+    networks:
+      default: 
+        aliases:
+          - nsqd.localtest.me
+  
+  nsqlookupd:
+    image: nsqio/nsq
+    command: /nsqlookupd
+    ports:
+      - "4160"
+      - "4161:4161"
+    networks:
+      default: 
+        aliases:
+          - nsqlookupd.localtest.me
+  runner:
+    image: registry.nicedoc.cn/biyue-runner
+    environment:
+      - SERVER_NAMESPACE=biyue
+      - SERVER_NAME=runner
+      - SERVER_ADDRESS=:6060
+      - REPL_ADDRESS=:6061
+      - SERVER_DEBUG=true
+      - STORAGE_TYPE=0
+      - STORAGE_URL=mongodb://root:example@mongo:27017/
+      - STORAGE_DB=biyue
+      - TRACER_NAME=runner
+      - TRACER_ENABLE=true
+      - TRACER_ADDRESS=http://jaeger.localtest.me:9411
+      - TRACER_TYPE=1
+      - LOGGER_NAME=runner-logger
+      - LOGGER_LEVEL=1
+      - LOGGER_COLOR=true
+      - REGISTRY_ADDRESSES=consul
+      - REGISTRY_TYPE=2
+      - BIYUE_NSQ_LOOKUPDS = nsqlookupd.localtest.me:4161
+      - BIYUE_NSQ_ADDRESS = nsqd.localtest.me:4150
+      - BIYUE_NSQ_CHANNEL = oo
+      - BIYUE_NSQ_TOPIC = oo.runner
+    ports:
+      - 6060:6060
+    networks:
+      default: 
+        aliases:
+          - runner.localtest.me
  
   mongo:
     image: mongo
