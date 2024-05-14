@@ -4,3 +4,4 @@ build/callback
 build/gateway
 build/runner
 onlyoffice-biyue.code-workspace
+services/.DS_Store

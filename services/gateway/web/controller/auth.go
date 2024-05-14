@@ -267,6 +267,7 @@ func (c AuthController) BuildGetRedirect() http.HandlerFunc {
 		}
 
 		session.Values["token"] = tkn
+		session.Values["X-Token"] = xtoken
 		session.Options.MaxAge = 60 * 60 * 24
 		if err := session.Save(r, rw); err != nil {
 			c.logger.Errorf("could not save current session: %s", err.Error())

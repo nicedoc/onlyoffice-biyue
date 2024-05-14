@@ -104,6 +104,20 @@ func (m SessionMiddleware) Protect(next http.Handler) http.Handler {
 			return
 		}
 
+		xtoken := r.URL.Query().Get("xtoken")
+		if xtoken != "" && session.Values["X-Token"] != nil {
+			if session.Values["X-Token"] != xtoken {
+				session.Options.MaxAge = -1
+				if err := session.Save(r, rw); err != nil {
+					m.logger.Warnf("could not save a cookie session: %w", err)
+				}
+				m.saveRedirectURL(rw, r)
+				m.saveXToken(rw, r)
+				http.Redirect(rw, r.WithContext(r.Context()), "/oauth/install", http.StatusSeeOther)
+				return
+			}
+		}
+
 		signature, _ := m.jwtManager.Sign(m.credentials.ClientSecret, jwt.RegisteredClaims{
 			ID:        token["jti"].(string),
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(25 * time.Hour)),

@@ -38,11 +38,10 @@ func (c ConvertController) BuildConvertPage() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		rw.Header().Set("Content-Type", "text/html")
 		fileID := r.URL.Query().Get("file_id")
-
+		xtoken := r.URL.Query().Get("xtoken")
 		uid := rw.Header().Get("X-User")
 		if uid == "" {
 			c.logger.Warn("could not get user id from headers")
-			xtoken := r.URL.Query().Get("x-token")
 			http.Redirect(rw, r, fmt.Sprintf("/oauth/install?xtoken=%s", xtoken), http.StatusMovedPermanently)
 			return
 		}
@@ -62,6 +61,13 @@ func (c ConvertController) BuildConvertPage() http.HandlerFunc {
 			}); err != nil {
 				c.logger.Errorf("could not execute an error template: %w", err)
 			}
+			return
+		}
+
+		// 需要刷新token
+		if xtoken != "" && ures.AccessToken != xtoken {
+			c.logger.Warn("token update required")
+			http.Redirect(rw, r, fmt.Sprintf("/oauth/install?xtoken=%s", xtoken), http.StatusMovedPermanently)
 			return
 		}
 
