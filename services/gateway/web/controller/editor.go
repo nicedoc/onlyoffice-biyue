@@ -244,8 +244,8 @@ func (c EditorController) BuildEditorPage() http.HandlerFunc {
 					Name: usr.PersonName,
 				},
 				CallbackURL: fmt.Sprintf(
-					"%s/callback?id=%s",
-					c.onlyoffice.Onlyoffice.Builder.CallbackURL, file.PaperUuid,
+					"%s/callback?id=%s&xtoken=%s",
+					c.onlyoffice.Onlyoffice.Builder.CallbackURL, file.PaperUuid, ures.AccessToken,
 				),
 				Customization: response.Customization{
 					Goback: response.Goback{
