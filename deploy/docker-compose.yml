@@ -57,6 +57,9 @@ services:
       - postgresql_data:/var/lib/postgresql
   
   onlyoffice-biyueplugin:
+    build:
+      context: .
+      target: plugin
     container_name: onlyoffice-biyueplugin
     image: registry.nicedoc.cn/biyue-plugin
     restart: always
