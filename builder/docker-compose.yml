@@ -20,8 +20,8 @@ services:
       - JWT_HEADER=Authorization
       - JWT_IN_BODY=false
     ports:
-      - '80:80'
-      - '443:443'
+      - '80:3080'
+      - '443:3443'
     stdin_open: true
     restart: always
     stop_grace_period: 60s
@@ -30,9 +30,11 @@ services:
        - /var/log/onlyoffice
        - /var/lib/onlyoffice/documentserver/App_Data/cache/files
        - /var/www/onlyoffice/documentserver-example/public/files
-       - /Volumes/work/onlyoffice/sdkjs:/var/www/onlyoffice/documentserver/sdkjs
-       - /Volumes/work/onlyoffice/web-apps:/var/www/onlyoffice/documentserver/web-apps
-       - /Volumes/work/onlyoffice:/onlyoffice    
+       - /mnt/d/biyue/sdkjs:/sdkjs
+       - /mnt/d/biyue/web-apps:/web-apps
+       - /mnt/d/biyue/core:/core
+       - /mnt/d/biyue/server:/server
+       - /mnt/d/biyue/build_tools:/build_tools    
 
   onlyoffice-rabbitmq:
     container_name: onlyoffice-rabbitmq

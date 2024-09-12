@@ -36,13 +36,20 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     libxi-dev \
     libxrender-dev \
     libxss1 \
-    libncurses5
+    libncurses5 \
+    clang-15 \
+    lld-15 \
+    wget \
+    x11-utils \
+    apt-utils \
+    sudo \
+    openjdk-11-jdk
+
+
 RUN ln -s /usr/bin/python3 /usr/bin/python 
-RUN curl -sL https://deb.nodesource.com/setup_16.x | bash -
 
 # Stuff that have to be installed and modified "manually"
-RUN apt-get -y install nodejs clang-15 lld-15 wget sudo x11-utils apt-utils && \
-mv -v /usr/bin/clang-15 /usr/bin/clang && \
+RUN mv -v /usr/bin/clang-15 /usr/bin/clang && \
 mv -v /usr/bin/clang-cpp-15 /usr/bin/clang-cpp && \
 mv -v /usr/bin/clang++-15 /usr/bin/clang++ && \
 mv -v /usr/bin/dsymutil-15 /usr/bin/dsymutil && \
@@ -115,5 +122,9 @@ mv -v /usr/bin/ld.lld-15 /usr/bin/ld.lld && \
 mv -v /usr/bin/lld-15 /usr/bin/lld && \
 mv -v /usr/bin/ld64.lld-15 /usr/bin/ld64.lld && \
 mv -v /usr/bin/lld-link-15 /usr/bin/lld-link
+
+
+RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash - && apt-get install -y nodejs
+
 
 RUN /bin/bash
