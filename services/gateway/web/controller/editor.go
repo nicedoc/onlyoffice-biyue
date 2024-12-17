@@ -266,6 +266,7 @@ func (c EditorController) BuildEditorPage() http.HandlerFunc {
 					},
 				},
 				Lang: "zh",
+				Mode: "edit",
 			},
 			Type:      eType,
 			ServerURL: c.onlyoffice.Onlyoffice.Builder.DocumentServerURL,
