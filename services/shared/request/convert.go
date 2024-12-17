@@ -29,6 +29,7 @@
 	 Action    string `json:"action"`
 	 FileID    string `json:"file_id"`
 	 ForceEdit bool   `json:"force_edit"`
+	 Type      string `json:"type"`
  }
  
  type ConvertRequest struct {
