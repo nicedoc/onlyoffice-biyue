@@ -143,7 +143,7 @@ func (c ConvertController) BuildConvertPage() http.HandlerFunc {
 			creq := request.ConvertActionRequest{
 				Action: "edit",
 				FileID: fileID,
-				Type: editorType
+				Type: editorType,
 			}
 			creq.IssuedAt = jwt.NewNumericDate(time.Now())
 			creq.ExpiresAt = jwt.NewNumericDate(time.Now().Add(5 * time.Minute))
