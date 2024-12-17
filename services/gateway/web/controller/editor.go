@@ -100,6 +100,8 @@ func (c EditorController) BuildEditorPage() http.HandlerFunc {
 			return
 		}
 
+		editorType, ok := token["type"].(string)		
+
 		var ures response.UserResponse
 		if err := c.client.Call(r.Context(), c.client.NewRequest(
 			fmt.Sprintf("%s:auth", c.server.Namespace), "UserSelectHandler.GetUser",
@@ -210,10 +212,13 @@ func (c EditorController) BuildEditorPage() http.HandlerFunc {
 		default:
 		}
 
-		eType := "desktop"
+		eType := "desktop"		
 		ua := useragent.Parse(r.UserAgent())
 		if ua.Mobile || ua.Tablet {
 			eType = "mobile"
+		}
+		if editorType != "" {
+			eType = editorType
 		}
 
 		durl := <-downloadChan

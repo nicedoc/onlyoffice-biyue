@@ -39,7 +39,8 @@ func (c ConvertController) BuildConvertPage() http.HandlerFunc {
 		rw.Header().Set("Content-Type", "text/html")
 		fileID := r.URL.Query().Get("file_id")
 		xtoken := r.URL.Query().Get("xtoken")
-		uid := rw.Header().Get("X-User")
+		editorType := r.URL.Query().Get("type")
+		uid := rw.Header().Get("X-User")		
 		if uid == "" {
 			c.logger.Warn("could not get user id from headers")
 			http.Redirect(rw, r, fmt.Sprintf("/oauth/install?xtoken=%s", xtoken), http.StatusMovedPermanently)
@@ -142,6 +143,7 @@ func (c ConvertController) BuildConvertPage() http.HandlerFunc {
 			creq := request.ConvertActionRequest{
 				Action: "edit",
 				FileID: fileID,
+				Type: editorType
 			}
 			creq.IssuedAt = jwt.NewNumericDate(time.Now())
 			creq.ExpiresAt = jwt.NewNumericDate(time.Now().Add(5 * time.Minute))
